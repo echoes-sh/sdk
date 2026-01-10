@@ -1,6 +1,6 @@
 {
   "name": "@echoessh/sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Official SDK for Echoes - Centralized feedback platform for developers",
   "author": "Echoes",
   "license": "MIT",
