@@ -205,15 +205,10 @@ export class EventBatcher {
   }
 
   /**
-   * Sends events using the Beacon API (for unload handlers)
+   * Sends events using fetch with keepalive (for unload handlers)
+   * This is preferred over sendBeacon as it supports custom headers
    */
   private sendBeacon(events: TrackingEvent[]): boolean {
-    if (typeof navigator === "undefined" || !navigator.sendBeacon) {
-      // Fallback to sync XHR if sendBeacon not available
-      this.sendSyncXHR(events);
-      return true;
-    }
-
     const sessionManager = this.config.sessionManager;
 
     const payload: EventBatch = {
@@ -227,23 +222,30 @@ export class EventBatcher {
       payload.session = sessionManager.getSessionMetadata();
     }
 
-    const blob = new Blob([JSON.stringify(payload)], {
-      type: "application/json",
-    });
+    try {
+      // Use fetch with keepalive instead of sendBeacon to support headers
+      // This keeps the API key secure in the header rather than URL
+      fetch(`${this.config.baseUrl}/api/v1/analytics/events`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": this.config.apiKey,
+        },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).then(() => {
+        sessionManager.markFirstBatchSent();
+      }).catch(() => {
+        // Silently fail - this is a best-effort send during page unload
+      });
 
-    // sendBeacon doesn't support custom headers, so we need to include
-    // the API key in the URL or use a different approach
-    // For now, we'll send it as a query parameter (the server should support this)
-    const url = `${this.config.baseUrl}/api/v1/analytics/events?apiKey=${encodeURIComponent(this.config.apiKey)}`;
-
-    const success = navigator.sendBeacon(url, blob);
-    this.log("Beacon sent:", success ? "success" : "failed");
-
-    if (success) {
-      sessionManager.markFirstBatchSent();
+      this.log("Keepalive fetch sent");
+      return true;
+    } catch {
+      // Fallback to sync XHR if fetch fails
+      this.sendSyncXHR(events);
+      return true;
     }
-
-    return success;
   }
 
   /**

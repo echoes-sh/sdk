@@ -173,7 +173,7 @@ const darkTheme: Record<string, CSSProperties> = {
  *
  * @example
  * ```tsx
- * import { EchoesProvider, FeedbackWidget } from "@echoes/sdk/react";
+ * import { EchoesProvider, FeedbackWidget } from "@echoessh/sdk/react";
  *
  * function App() {
  *   return (

@@ -4,6 +4,7 @@ import {
   FeedbackResponse,
   EchoesError,
   ErrorCodes,
+  ExperimentClient,
 } from "./types";
 
 const DEFAULT_BASE_URL = "https://echoes.sh";
@@ -14,7 +15,7 @@ const DEFAULT_TIMEOUT = 10000;
  *
  * @example
  * ```typescript
- * import { Echoes } from "@echoes/sdk";
+ * import { Echoes } from "@echoessh/sdk";
  *
  * const echoes = new Echoes({
  *   apiKey: "ek_live_xxxxxxxxxxxxx",
@@ -31,7 +32,7 @@ export class Echoes {
   private config: Required<
     Pick<EchoesConfig, "apiKey" | "baseUrl" | "timeout" | "debug">
   > &
-    Pick<EchoesConfig, "defaultUserIdentifier" | "defaultMetadata">;
+    Pick<EchoesConfig, "defaultUserIdentifier" | "defaultMetadata" | "experimentClient">;
 
   constructor(config: EchoesConfig) {
     if (!config.apiKey) {
@@ -55,6 +56,7 @@ export class Echoes {
       debug: config.debug ?? false,
       defaultUserIdentifier: config.defaultUserIdentifier,
       defaultMetadata: config.defaultMetadata,
+      experimentClient: config.experimentClient,
     };
 
     this.log("Echoes client initialized");
@@ -85,14 +87,26 @@ export class Echoes {
   async send(params: SendFeedbackParams): Promise<FeedbackResponse> {
     this.validateParams(params);
 
+    // Build metadata with experiment context if available
+    const metadata: Record<string, unknown> = {
+      ...this.config.defaultMetadata,
+      ...params.metadata,
+    };
+
+    // Auto-inject active experiments if experimentClient is configured
+    if (this.config.experimentClient) {
+      const activeExperiments = this.config.experimentClient.getActiveExperiments();
+      if (Object.keys(activeExperiments).length > 0) {
+        metadata._experiments = activeExperiments;
+        this.log("Injecting experiment context:", activeExperiments);
+      }
+    }
+
     const payload = {
       category: params.category,
       message: params.message,
       userIdentifier: params.userIdentifier ?? this.config.defaultUserIdentifier,
-      metadata: {
-        ...this.config.defaultMetadata,
-        ...params.metadata,
-      },
+      metadata,
     };
 
     this.log("Sending feedback:", payload);
@@ -207,6 +221,23 @@ export class Echoes {
     });
   }
 
+  /**
+   * Create a new client with an experiment client for automatic context injection
+   */
+  withExperiments(experimentClient: ExperimentClient): Echoes {
+    return new Echoes({
+      ...this.config,
+      experimentClient,
+    });
+  }
+
+  /**
+   * Get the current experiment client if configured
+   */
+  getExperimentClient(): ExperimentClient | undefined {
+    return this.config.experimentClient;
+  }
+
   private validateParams(params: SendFeedbackParams): void {
     const validCategories = ["bug", "feature", "question", "praise"];
 
@@ -276,7 +307,7 @@ export class Echoes {
  *
  * @example
  * ```typescript
- * import { createEchoes } from "@echoes/sdk";
+ * import { createEchoes } from "@echoessh/sdk";
  *
  * const echoes = createEchoes({
  *   apiKey: process.env.ECHOES_API_KEY!,

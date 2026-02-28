@@ -13,6 +13,21 @@ export type { EchoesAnalyticsProviderProps } from "./analytics-provider";
 // Hooks
 export { useFeedback } from "./use-feedback";
 
+// Experiment hooks
+export {
+  ExperimentProvider,
+  useExperimentClient,
+  useExperiment,
+  useVariation,
+  useFeatureFlag,
+  useActiveExperiments,
+  useExperimentIdentify,
+} from "./use-experiment";
+export type {
+  ExperimentProviderProps,
+  UseExperimentResult,
+} from "./use-experiment";
+
 // Components
 export { FeedbackWidget } from "./feedback-widget";
 export type { FeedbackWidgetProps } from "./feedback-widget";
@@ -33,3 +48,10 @@ export type {
   EventType,
   SessionMetadata,
 } from "../analytics/types";
+
+// Re-export experiment types
+export type {
+  Variation,
+  ExperimentClientOptions,
+  ActiveExperiments,
+} from "../experiments/types";

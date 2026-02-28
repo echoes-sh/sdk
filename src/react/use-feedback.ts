@@ -47,7 +47,7 @@ interface UseFeedbackReturn extends UseFeedbackState {
  *
  * @example
  * ```tsx
- * import { useFeedback } from "@echoes/sdk/react";
+ * import { useFeedback } from "@echoessh/sdk/react";
  *
  * function FeedbackForm() {
  *   const { send, isLoading, isSuccess, error } = useFeedback();

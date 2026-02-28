@@ -44,6 +44,18 @@ export interface AnalyticsConfig {
   trackScroll?: boolean;
 
   /**
+   * Enable mouse movement tracking for heatmaps
+   * @default true
+   */
+  trackMovement?: boolean;
+
+  /**
+   * Movement tracking sample interval in ms
+   * @default 100
+   */
+  movementSampleInterval?: number;
+
+  /**
    * Enable JavaScript error capture
    * @default true
    */
@@ -100,6 +112,40 @@ export interface AnalyticsConfig {
    * CSS selectors of elements to mask in recordings
    */
   maskedElements?: string[];
+
+  /**
+   * CSS selectors of elements to block entirely from recordings
+   */
+  blockedElements?: string[];
+
+  /**
+   * Data attributes to mask (e.g., 'data-sensitive')
+   */
+  maskedAttributes?: string[];
+
+  /**
+   * Enable rage-click detection
+   * @default true
+   */
+  detectRageClicks?: boolean;
+
+  /**
+   * Number of clicks required to trigger rage-click detection
+   * @default 3
+   */
+  rageClickThreshold?: number;
+
+  /**
+   * Time window in ms for rage-click detection
+   * @default 1000
+   */
+  rageClickWindow?: number;
+
+  /**
+   * Pixel radius for rage-click proximity detection
+   * @default 50
+   */
+  rageClickRadius?: number;
 
   /**
    * Enable debug logging
@@ -166,6 +212,10 @@ export interface TrackingEvent {
   elementClasses?: string;
   /** ID of clicked element */
   elementId?: string;
+  /** Whether this is a rage click */
+  isRageClick?: boolean;
+  /** Position in the rage click sequence (1, 2, 3...) */
+  rageClickSequence?: number;
 
   // Scroll-specific fields
   /** Scroll depth as percentage (0-100) */
@@ -174,6 +224,14 @@ export interface TrackingEvent {
   scrollDepthPixels?: number;
   /** Total page height */
   pageHeight?: number;
+  /** Scroll heatmap grid (100 values representing view counts at each vertical position) */
+  scrollHeatmapGrid?: number[];
+
+  // Movement heatmap fields
+  /** Movement heatmap grid (10000 values for 100x100 grid representing mouse movement density) */
+  movementHeatmapGrid?: number[];
+  /** Attention time per element (selector -> seconds spent hovering) */
+  attentionTime?: Record<string, number>;
 
   // Error-specific fields
   /** Error message */

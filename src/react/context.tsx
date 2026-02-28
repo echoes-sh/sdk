@@ -25,7 +25,7 @@ export interface EchoesProviderProps {
  *
  * @example
  * ```tsx
- * import { EchoesProvider } from "@echoes/sdk/react";
+ * import { EchoesProvider } from "@echoessh/sdk/react";
  *
  * function App() {
  *   return (
@@ -56,7 +56,7 @@ export function EchoesProvider({ config, children }: EchoesProviderProps) {
  *
  * @example
  * ```tsx
- * import { useEchoes } from "@echoes/sdk/react";
+ * import { useEchoes } from "@echoessh/sdk/react";
  *
  * function FeedbackButton() {
  *   const echoes = useEchoes();

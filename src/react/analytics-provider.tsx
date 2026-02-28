@@ -52,13 +52,18 @@ const DEFAULT_CONFIG: Partial<AnalyticsConfig> = {
   trackClicks: true,
   trackScroll: true,
   trackErrors: true,
-  enableRecording: false,
+  enableRecording: true,
   sessionTimeout: 30 * 60 * 1000, // 30 minutes
   batchSize: 10,
   batchInterval: 5000, // 5 seconds
   maskInputs: true,
   maskAllText: false,
   maxRecordingDuration: 30, // 30 minutes default
+  // Rage-click detection defaults
+  detectRageClicks: true,
+  rageClickThreshold: 3,
+  rageClickWindow: 1000,
+  rageClickRadius: 50,
   debug: false,
 };
 
@@ -71,7 +76,7 @@ const DEFAULT_CONFIG: Partial<AnalyticsConfig> = {
  *
  * @example
  * ```tsx
- * import { EchoesAnalyticsProvider } from "@echoes/sdk/react";
+ * import { EchoesAnalyticsProvider } from "@echoessh/sdk/react";
  *
  * export default function RootLayout({ children }) {
  *   return (
@@ -162,8 +167,12 @@ export function EchoesAnalyticsProvider({
       trackersRef.current.click = new ClickTracker({
         ...trackerConfig,
         ignoredElements: config.ignoredElements,
+        detectRageClicks: config.detectRageClicks,
+        rageClickThreshold: config.rageClickThreshold,
+        rageClickWindow: config.rageClickWindow,
+        rageClickRadius: config.rageClickRadius,
       });
-      log("Click tracking enabled");
+      log("Click tracking enabled", config.detectRageClicks ? "(with rage-click detection)" : "");
     }
 
     if (config.trackScroll) {
@@ -360,7 +369,7 @@ export function EchoesAnalyticsProvider({
  *
  * @example
  * ```tsx
- * import { useEchoesAnalytics } from "@echoes/sdk/react";
+ * import { useEchoesAnalytics } from "@echoessh/sdk/react";
  *
  * function CheckoutButton() {
  *   const { track, identify } = useEchoesAnalytics();

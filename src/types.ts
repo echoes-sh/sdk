@@ -1,7 +1,21 @@
+import type { ExperimentClient, ActiveExperiments } from "./experiments";
+
 /**
  * Feedback category types
  */
 export type FeedbackCategory = "bug" | "feature" | "question" | "praise";
+
+/**
+ * Experiment context injected into feedback metadata
+ */
+export interface ExperimentContext {
+  [experimentKey: string]: {
+    variationKey: string;
+    assignmentId: string;
+  };
+}
+
+export type { ExperimentClient, ActiveExperiments };
 
 /**
  * Configuration options for the Echoes client
@@ -39,6 +53,12 @@ export interface EchoesConfig {
    * @default false
    */
   debug?: boolean;
+
+  /**
+   * Experiment client for automatic experiment context injection
+   * When provided, active experiments will be automatically added to feedback metadata
+   */
+  experimentClient?: ExperimentClient;
 }
 
 /**

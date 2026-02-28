@@ -388,13 +388,10 @@ export class RecordingManager {
   }
 
   /**
-   * Synchronous flush using sendBeacon for use in unload handlers
+   * Synchronous flush using fetch with keepalive for use in unload handlers
+   * Uses fetch instead of sendBeacon to support custom headers (keeps API key secure)
    */
   private sendBeaconFlush(): void {
-    if (typeof navigator === "undefined" || !navigator.sendBeacon) {
-      return;
-    }
-
     try {
       const serialized = JSON.stringify(this.events);
 
@@ -409,11 +406,20 @@ export class RecordingManager {
         isLast: true,
       };
 
-      const blob = new Blob([JSON.stringify(chunk)], { type: "application/json" });
-      const url = `${this.config.baseUrl}/api/v1/analytics/recordings?apiKey=${encodeURIComponent(this.config.apiKey)}`;
+      // Use fetch with keepalive instead of sendBeacon to support headers
+      fetch(`${this.config.baseUrl}/api/v1/analytics/recordings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": this.config.apiKey,
+        },
+        body: JSON.stringify(chunk),
+        keepalive: true,
+      }).catch(() => {
+        // Silently fail - this is a best-effort send during page unload
+      });
 
-      navigator.sendBeacon(url, blob);
-      this.log("Final chunk sent via beacon");
+      this.log("Final chunk sent via keepalive fetch");
     } catch (error) {
       this.log("Beacon flush failed:", error);
     }
