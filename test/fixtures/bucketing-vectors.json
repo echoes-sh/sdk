@@ -1,0 +1,372 @@
+{
+  "description": "Shared test vectors for the bucketing rule in docs/ratings-and-experiments.md: echoes-v2 (convex/lib/bucketing.ts) and @echoessh/sdk (evaluate) must both give these. `boundaries` test the variation walk alone, at picks on a weight boundary: the comparison is exact (cum × 10000 > pick × total).",
+  "configs": [
+    {
+      "key": "room-agent",
+      "salt": "k3v9",
+      "trafficAllocation": 100,
+      "variations": [
+        {
+          "key": "sol",
+          "weight": 40
+        },
+        {
+          "key": "astra",
+          "weight": 20
+        },
+        {
+          "key": "opus",
+          "weight": 20
+        },
+        {
+          "key": "fable",
+          "weight": 20
+        }
+      ]
+    },
+    {
+      "key": "new-checkout",
+      "salt": "",
+      "trafficAllocation": 50,
+      "variations": [
+        {
+          "key": "off",
+          "weight": 1
+        },
+        {
+          "key": "on",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "key": "zero-weight",
+      "salt": "abc",
+      "trafficAllocation": 100,
+      "variations": [
+        {
+          "key": "a",
+          "weight": 0
+        },
+        {
+          "key": "b",
+          "weight": 3
+        },
+        {
+          "key": "c",
+          "weight": 1
+        }
+      ]
+    }
+  ],
+  "vectors": [
+    {
+      "experimentKey": "room-agent",
+      "salt": "k3v9",
+      "unitId": "k57a8b9c0d1e2f3",
+      "bucket": 9821,
+      "pick": 7121,
+      "variation": "opus"
+    },
+    {
+      "experimentKey": "room-agent",
+      "salt": "k3v9",
+      "unitId": "visitor-1",
+      "bucket": 365,
+      "pick": 2329,
+      "variation": "sol"
+    },
+    {
+      "experimentKey": "room-agent",
+      "salt": "k3v9",
+      "unitId": "visitor-2",
+      "bucket": 6394,
+      "pick": 4278,
+      "variation": "astra"
+    },
+    {
+      "experimentKey": "room-agent",
+      "salt": "k3v9",
+      "unitId": "room:jd7x",
+      "bucket": 2925,
+      "pick": 4014,
+      "variation": "astra"
+    },
+    {
+      "experimentKey": "room-agent",
+      "salt": "k3v9",
+      "unitId": "élodie@example.fr",
+      "bucket": 6217,
+      "pick": 837,
+      "variation": "sol"
+    },
+    {
+      "experimentKey": "room-agent",
+      "salt": "k3v9",
+      "unitId": "",
+      "bucket": 3318,
+      "pick": 3398,
+      "variation": "sol"
+    },
+    {
+      "experimentKey": "room-agent",
+      "salt": "k3v9",
+      "unitId": "0",
+      "bucket": 6008,
+      "pick": 2543,
+      "variation": "sol"
+    },
+    {
+      "experimentKey": "room-agent",
+      "salt": "k3v9",
+      "unitId": "🏠-unicode",
+      "bucket": 7459,
+      "pick": 8018,
+      "variation": "fable"
+    },
+    {
+      "experimentKey": "new-checkout",
+      "salt": "",
+      "unitId": "k57a8b9c0d1e2f3",
+      "bucket": 6545,
+      "pick": 3328,
+      "variation": null
+    },
+    {
+      "experimentKey": "new-checkout",
+      "salt": "",
+      "unitId": "visitor-1",
+      "bucket": 1745,
+      "pick": 4272,
+      "variation": "off"
+    },
+    {
+      "experimentKey": "new-checkout",
+      "salt": "",
+      "unitId": "visitor-2",
+      "bucket": 6353,
+      "pick": 4858,
+      "variation": null
+    },
+    {
+      "experimentKey": "new-checkout",
+      "salt": "",
+      "unitId": "room:jd7x",
+      "bucket": 5246,
+      "pick": 1918,
+      "variation": null
+    },
+    {
+      "experimentKey": "new-checkout",
+      "salt": "",
+      "unitId": "élodie@example.fr",
+      "bucket": 5750,
+      "pick": 6194,
+      "variation": null
+    },
+    {
+      "experimentKey": "new-checkout",
+      "salt": "",
+      "unitId": "",
+      "bucket": 7121,
+      "pick": 6771,
+      "variation": null
+    },
+    {
+      "experimentKey": "new-checkout",
+      "salt": "",
+      "unitId": "0",
+      "bucket": 5330,
+      "pick": 59,
+      "variation": null
+    },
+    {
+      "experimentKey": "new-checkout",
+      "salt": "",
+      "unitId": "🏠-unicode",
+      "bucket": 6041,
+      "pick": 5269,
+      "variation": null
+    },
+    {
+      "experimentKey": "zero-weight",
+      "salt": "abc",
+      "unitId": "k57a8b9c0d1e2f3",
+      "bucket": 7425,
+      "pick": 7517,
+      "variation": "c"
+    },
+    {
+      "experimentKey": "zero-weight",
+      "salt": "abc",
+      "unitId": "visitor-1",
+      "bucket": 8662,
+      "pick": 9507,
+      "variation": "c"
+    },
+    {
+      "experimentKey": "zero-weight",
+      "salt": "abc",
+      "unitId": "visitor-2",
+      "bucket": 3531,
+      "pick": 9416,
+      "variation": "c"
+    },
+    {
+      "experimentKey": "zero-weight",
+      "salt": "abc",
+      "unitId": "room:jd7x",
+      "bucket": 5874,
+      "pick": 7387,
+      "variation": "b"
+    },
+    {
+      "experimentKey": "zero-weight",
+      "salt": "abc",
+      "unitId": "élodie@example.fr",
+      "bucket": 8544,
+      "pick": 9491,
+      "variation": "c"
+    },
+    {
+      "experimentKey": "zero-weight",
+      "salt": "abc",
+      "unitId": "",
+      "bucket": 6331,
+      "pick": 2176,
+      "variation": "b"
+    },
+    {
+      "experimentKey": "zero-weight",
+      "salt": "abc",
+      "unitId": "0",
+      "bucket": 3606,
+      "pick": 9717,
+      "variation": "c"
+    },
+    {
+      "experimentKey": "zero-weight",
+      "salt": "abc",
+      "unitId": "🏠-unicode",
+      "bucket": 8677,
+      "pick": 7806,
+      "variation": "c"
+    }
+  ],
+  "boundaries": [
+    {
+      "weights": [
+        {
+          "key": "a",
+          "weight": 14
+        },
+        {
+          "key": "b",
+          "weight": 86
+        }
+      ],
+      "pick": 1400,
+      "variation": "b"
+    },
+    {
+      "weights": [
+        {
+          "key": "a",
+          "weight": 14
+        },
+        {
+          "key": "b",
+          "weight": 86
+        }
+      ],
+      "pick": 1399,
+      "variation": "a"
+    },
+    {
+      "weights": [
+        {
+          "key": "a",
+          "weight": 1
+        },
+        {
+          "key": "b",
+          "weight": 2
+        }
+      ],
+      "pick": 3333,
+      "variation": "a"
+    },
+    {
+      "weights": [
+        {
+          "key": "a",
+          "weight": 1
+        },
+        {
+          "key": "b",
+          "weight": 2
+        }
+      ],
+      "pick": 3334,
+      "variation": "b"
+    },
+    {
+      "weights": [
+        {
+          "key": "a",
+          "weight": 0
+        },
+        {
+          "key": "b",
+          "weight": 1
+        }
+      ],
+      "pick": 0,
+      "variation": "b"
+    },
+    {
+      "weights": [
+        {
+          "key": "sol",
+          "weight": 40
+        },
+        {
+          "key": "astra",
+          "weight": 20
+        },
+        {
+          "key": "opus",
+          "weight": 20
+        },
+        {
+          "key": "fable",
+          "weight": 20
+        }
+      ],
+      "pick": 4000,
+      "variation": "astra"
+    },
+    {
+      "weights": [
+        {
+          "key": "sol",
+          "weight": 40
+        },
+        {
+          "key": "astra",
+          "weight": 20
+        },
+        {
+          "key": "opus",
+          "weight": 20
+        },
+        {
+          "key": "fable",
+          "weight": 20
+        }
+      ],
+      "pick": 9999,
+      "variation": "fable"
+    }
+  ]
+}

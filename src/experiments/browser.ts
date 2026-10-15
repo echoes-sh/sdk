@@ -8,6 +8,9 @@
  * <script>
  *   const client = EchoesExperiments.init({ apiKey: 'ek_live_xxx' });
  *   const variation = await client.getVariation('my-experiment');
+ *   // or, locally once the config is cached:
+ *   await client.loadConfig();
+ *   const local = client.evaluate('my-experiment');
  * </script>
  * ```
  */
@@ -35,6 +38,18 @@ export function createClient(options: ExperimentClientOptions): ExperimentClient
 export { ExperimentClient };
 
 /**
+ * Bucketing functions (the contract's rule), for local evaluation
+ */
+export {
+  murmur3,
+  hashToBucket,
+  bucket10k,
+  variationBucket,
+  pickVariation,
+  evaluateExperiment,
+} from "./index";
+
+/**
  * Version
  */
-export const version = "1.0.0";
+export const version = "1.2.0";

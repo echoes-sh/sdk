@@ -9,6 +9,11 @@ export type {
   FeedbackResponse,
   FeedbackSuccessResponse,
   FeedbackErrorResponse,
+  RatingSubject,
+  RatingStars,
+  RatingExperimentRef,
+  RateParams,
+  RateResult,
 } from "./types";
 
 export { EchoesError, ErrorCodes } from "./types";
@@ -24,6 +29,13 @@ export {
   murmur3,
   hashToBucket,
   generateVisitorId,
+  bucket10k,
+  variationBucket,
+  pickVariation,
+  evaluateExperiment,
+  evaluateExperimentDetailed,
+  createMemoryStorage,
+  BUCKET_COUNT,
 } from "./experiments";
 export type {
   Variation,
@@ -39,4 +51,8 @@ export type {
   CachedAssignment,
   ActiveExperiments,
   VariationConfiguration,
+  ExperimentKind,
+  AssignOptions,
+  TrackOptions,
+  EvaluationDetail,
 } from "./experiments";
