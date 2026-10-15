@@ -5,10 +5,75 @@ import {
   EchoesError,
   ErrorCodes,
   ExperimentClient,
+  RateParams,
+  RateResult,
+  RatingExperimentRef,
 } from "./types";
 
 const DEFAULT_BASE_URL = "https://echoes.sh";
 const DEFAULT_TIMEOUT = 10000;
+
+/** Limits from the contract (echoes-v2 docs/ratings-and-experiments.md) */
+const SUBJECT_TYPE_PATTERN = /^[a-z0-9_.-]{1,50}$/;
+const SUBJECT_ID_MAX = 255;
+const SUBJECT_VERSION_MAX = 50;
+const COMMENT_MAX = 2000;
+
+/**
+ * Turn an error answer from the API into an EchoesError.
+ *
+ * A 403 is told apart by the server's error string ("API key is disabled",
+ * "Origin not allowed", "Monthly feedback limit reached…"), which is kept as
+ * the message.
+ */
+export function errorFromResponse(
+  status: number,
+  data: { error?: unknown } | null | undefined
+): EchoesError {
+  const serverMessage =
+    data && typeof data.error === "string" && data.error.trim()
+      ? data.error
+      : undefined;
+  const errorMessage = serverMessage ?? "Unknown error occurred";
+
+  switch (status) {
+    case 400:
+      return new EchoesError(errorMessage, ErrorCodes.INVALID_PAYLOAD, status);
+    case 401:
+      return new EchoesError(
+        "Invalid or missing API key",
+        ErrorCodes.INVALID_API_KEY,
+        status
+      );
+    case 403: {
+      const m = serverMessage ?? "";
+      if (/disabled|revoked/i.test(m)) {
+        return new EchoesError(m, ErrorCodes.INVALID_API_KEY, status);
+      }
+      if (/origin/i.test(m)) {
+        return new EchoesError(m, ErrorCodes.ORIGIN_NOT_ALLOWED, status);
+      }
+      if (/quota|limit reached|upgrade/i.test(m)) {
+        return new EchoesError(m, ErrorCodes.QUOTA_EXCEEDED, status);
+      }
+      return new EchoesError(m || "Forbidden", ErrorCodes.FORBIDDEN, status);
+    }
+    case 404:
+      return new EchoesError(
+        serverMessage ?? "Not found",
+        ErrorCodes.NOT_FOUND,
+        status
+      );
+    case 429:
+      return new EchoesError(
+        "Rate limit exceeded. Please try again later.",
+        ErrorCodes.RATE_LIMITED,
+        status
+      );
+    default:
+      return new EchoesError(errorMessage, ErrorCodes.UNKNOWN, status);
+  }
+}
 
 /**
  * Echoes client for sending feedback to your Echoes project
@@ -111,46 +176,78 @@ export class Echoes {
 
     this.log("Sending feedback:", payload);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
+    const data = await this.post("/api/v1/feedback", payload);
+    this.log("Feedback submitted successfully:", data);
+    return data as FeedbackResponse;
+  }
 
-    try {
-      const response = await fetch(`${this.config.baseUrl}/api/v1/feedback`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": this.config.apiKey,
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
+  /**
+   * Rate something the app showed: 1–5 stars, or `null` when the person
+   * dismissed the question, with an optional comment.
+   *
+   * When the client has an experiment client, the experiments its visitor is
+   * in are added to `experiments` automatically.
+   *
+   * @returns `{ ratingId, updated }`; `updated` is true when the same
+   *   `userIdentifier` had already rated the same subject version
+   * @throws {EchoesError} On invalid parameters or when the request fails
+   *
+   * @example
+   * ```typescript
+   * const { ratingId } = await echoes.rate({
+   *   subject: { type: "room", id: roomId, version: "3" },
+   *   stars: 4,
+   *   comment: "Lovely, but the sofa faces the wall",
+   *   userIdentifier: "user@example.com",
+   *   experiments: [{ key: "room-agent", unitId: roomId }],
+   * });
+   * ```
+   */
+  async rate(params: RateParams): Promise<RateResult> {
+    const comment = this.validateRating(params);
 
-      clearTimeout(timeoutId);
+    const metadata: Record<string, unknown> = {
+      ...this.config.defaultMetadata,
+      ...params.metadata,
+    };
 
-      const data = await response.json();
+    const experiments = this.ratingExperiments(params.experiments);
 
-      if (!response.ok) {
-        this.log("Feedback submission failed:", data);
-        return this.handleErrorResponse(response.status, data);
-      }
+    const subject: { type: string; id: string; version?: string } = {
+      type: params.subject.type,
+      id: params.subject.id,
+    };
+    if (params.subject.version !== undefined && params.subject.version !== null) {
+      subject.version = String(params.subject.version);
+    }
 
-      this.log("Feedback submitted successfully:", data);
-      return data as FeedbackResponse;
-    } catch (error) {
-      clearTimeout(timeoutId);
+    const payload: Record<string, unknown> = {
+      subject,
+      stars: params.stars,
+      userIdentifier: params.userIdentifier ?? this.config.defaultUserIdentifier,
+      metadata,
+    };
+    if (comment) payload.comment = comment;
+    if (experiments.length > 0) payload.experiments = experiments;
 
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new EchoesError(
-          `Request timed out after ${this.config.timeout}ms`,
-          ErrorCodes.TIMEOUT
-        );
-      }
+    this.log("Sending rating:", payload);
 
+    const data = (await this.post("/api/v1/ratings", payload)) as {
+      success?: boolean;
+      ratingId?: string;
+      updated?: boolean;
+      error?: string;
+    };
+
+    if (data.success === false || typeof data.ratingId !== "string") {
       throw new EchoesError(
-        error instanceof Error ? error.message : "Network error occurred",
-        ErrorCodes.NETWORK_ERROR
+        data.error || "Unexpected response from the ratings endpoint",
+        ErrorCodes.UNKNOWN
       );
     }
+
+    this.log("Rating submitted:", data);
+    return { ratingId: data.ratingId, updated: data.updated === true };
   }
 
   /**
@@ -263,36 +360,175 @@ export class Echoes {
     }
   }
 
-  private handleErrorResponse(
-    status: number,
-    data: { error?: string }
-  ): FeedbackResponse {
-    const errorMessage = data.error || "Unknown error occurred";
+  /**
+   * Validate rating parameters; returns the trimmed comment, if any.
+   */
+  private validateRating(params: RateParams): string | undefined {
+    const invalid = (message: string) =>
+      new EchoesError(message, ErrorCodes.INVALID_PAYLOAD);
 
-    switch (status) {
-      case 400:
-        throw new EchoesError(errorMessage, ErrorCodes.INVALID_PAYLOAD, status);
-      case 401:
-        throw new EchoesError(
-          "Invalid or missing API key",
-          ErrorCodes.INVALID_API_KEY,
-          status
-        );
-      case 403:
-        throw new EchoesError(
-          "API key is disabled",
-          ErrorCodes.INVALID_API_KEY,
-          status
-        );
-      case 429:
-        throw new EchoesError(
-          "Rate limit exceeded. Please try again later.",
-          ErrorCodes.RATE_LIMITED,
-          status
-        );
-      default:
-        throw new EchoesError(errorMessage, ErrorCodes.UNKNOWN, status);
+    if (!params || typeof params !== "object") {
+      throw invalid("Rating parameters are required");
     }
+
+    const subject = params.subject;
+    if (!subject || typeof subject !== "object") {
+      throw invalid("subject is required");
+    }
+    if (typeof subject.type !== "string" || !SUBJECT_TYPE_PATTERN.test(subject.type)) {
+      throw invalid(
+        "subject.type must match ^[a-z0-9_.-]{1,50}$ (lowercase letters, digits, _ . -)"
+      );
+    }
+    if (
+      typeof subject.id !== "string" ||
+      subject.id.length === 0 ||
+      subject.id.length > SUBJECT_ID_MAX
+    ) {
+      throw invalid(`subject.id must be a string of 1 to ${SUBJECT_ID_MAX} characters`);
+    }
+    if (subject.version !== undefined && subject.version !== null) {
+      const version = subject.version;
+      if (
+        (typeof version !== "string" && typeof version !== "number") ||
+        (typeof version === "number" && !Number.isFinite(version)) ||
+        String(version).length > SUBJECT_VERSION_MAX
+      ) {
+        throw invalid(
+          `subject.version must be a string of at most ${SUBJECT_VERSION_MAX} characters`
+        );
+      }
+    }
+
+    const stars = params.stars;
+    if (
+      stars !== null &&
+      !(typeof stars === "number" && Number.isInteger(stars) && stars >= 1 && stars <= 5)
+    ) {
+      throw invalid("stars must be an integer from 1 to 5, or null");
+    }
+
+    let comment: string | undefined;
+    if (params.comment !== undefined && params.comment !== null) {
+      if (typeof params.comment !== "string") {
+        throw invalid("comment must be a string");
+      }
+      comment = params.comment.trim();
+      if (comment.length > COMMENT_MAX) {
+        throw invalid(`comment must be at most ${COMMENT_MAX} characters`);
+      }
+      if (comment.length === 0) comment = undefined;
+    }
+
+    if (params.userIdentifier !== undefined && typeof params.userIdentifier !== "string") {
+      throw invalid("userIdentifier must be a string");
+    }
+
+    if (params.experiments !== undefined) {
+      if (!Array.isArray(params.experiments)) {
+        throw invalid("experiments must be an array of { key, unitId }");
+      }
+      for (const e of params.experiments) {
+        if (
+          !e ||
+          typeof e.key !== "string" ||
+          e.key.length === 0 ||
+          typeof e.unitId !== "string"
+        ) {
+          throw invalid("experiments must be an array of { key, unitId }");
+        }
+      }
+    }
+
+    return comment;
+  }
+
+  /**
+   * The experiments a rating belongs to: the explicit ones, plus those the
+   * experiment client's visitor is in (an explicit entry wins for its key).
+   */
+  private ratingExperiments(
+    explicit: RatingExperimentRef[] | undefined
+  ): RatingExperimentRef[] {
+    const result: RatingExperimentRef[] = (explicit ?? []).map((e) => ({
+      key: e.key,
+      unitId: e.unitId,
+    }));
+    const client = this.config.experimentClient;
+    if (!client) return result;
+
+    const explicitKeys = new Set(result.map((e) => e.key));
+    const active = client.getActiveExperiments();
+    const visitorId = client.getVisitorId();
+    const auto = Object.keys(active)
+      .filter((key) => !explicitKeys.has(key))
+      .map((key) => ({ key, unitId: visitorId }));
+    if (auto.length > 0) {
+      this.log("Adding experiment context to rating:", auto);
+    }
+    return [...result, ...auto];
+  }
+
+  /**
+   * POST a JSON payload to the API. Resolves with the parsed answer on a 2xx,
+   * throws an EchoesError otherwise.
+   */
+  private async post(path: string, payload: unknown): Promise<unknown> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
+
+    let response: Response;
+    try {
+      response = await fetch(`${this.config.baseUrl}${path}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": this.config.apiKey,
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new EchoesError(
+          `Request timed out after ${this.config.timeout}ms`,
+          ErrorCodes.TIMEOUT
+        );
+      }
+      throw new EchoesError(
+        error instanceof Error ? error.message : "Network error occurred",
+        ErrorCodes.NETWORK_ERROR
+      );
+    }
+
+    let data: unknown = null;
+    try {
+      data = await response.json();
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        clearTimeout(timeoutId);
+        throw new EchoesError(
+          `Request timed out after ${this.config.timeout}ms`,
+          ErrorCodes.TIMEOUT
+        );
+      }
+      // Not JSON (e.g. a proxy's error page): fall through with no data.
+    }
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      this.log(`Request to ${path} failed:`, response.status, data);
+      throw errorFromResponse(response.status, data as { error?: unknown } | null);
+    }
+    if (data === null || typeof data !== "object") {
+      throw new EchoesError(
+        "Invalid response from Echoes (not JSON)",
+        ErrorCodes.UNKNOWN,
+        response.status
+      );
+    }
+    return data;
   }
 
   private log(...args: unknown[]): void {
