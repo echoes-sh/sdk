@@ -43,8 +43,7 @@ jobs:
         if: steps.published.outputs.exists == 'false'
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          registry-url: https://registry.npmjs.org
+          node-version: 22
 
       - name: Install and build
         if: steps.published.outputs.exists == 'false'
@@ -52,8 +51,29 @@ jobs:
           bun install --frozen-lockfile
           bun run build
 
+      # npm trusted publishing exchanges this job's GitHub OIDC token for
+      # publish rights: the trusted publisher is set on npmjs.com for this
+      # repo + this workflow file, so no npm token is stored anywhere (as for
+      # joby-cli). It needs npm >= 11.5.1; the runner's is older. Provenance
+      # is on by default under trusted publishing, and this repo is public.
       - name: Publish to npm
         if: steps.published.outputs.exists == 'false'
-        run: npm publish --access public --provenance
+        run: |
+          npm install -g npm@11
+          npm publish --access public
+
+      # A failed OIDC exchange can leave a green run and no package: read it
+      # back from the registry instead of trusting the exit code.
+      - name: Verify the published package
+        if: steps.published.outputs.exists == 'false'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          for attempt in 1 2 3 4 5; do
+            published="$(npm view "@echoessh/sdk@${VERSION}" version 2>/dev/null || true)"
+            [ "$published" = "$VERSION" ] && { echo "@echoessh/sdk@${VERSION} is live."; exit 0; }
+            echo "Not visible yet (attempt ${attempt}/5); waiting."
+            sleep 10
+          done
+          echo "::error::@echoessh/sdk@${VERSION} is not on the registry after publishing"
+          exit 1
