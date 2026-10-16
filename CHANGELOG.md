@@ -1,10 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.2.1
 
 ### Changed
 
 - Session recording now depends on `@rrweb/record` and `@rrweb/types` (2.1.7) instead of the deprecated `rrweb` package (2.0.0-alpha.17). Recording options and output are unchanged.
+- The CDN bundle reports `version` `1.2.1`.
 
 ## 1.2.0
 
