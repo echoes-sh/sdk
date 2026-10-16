@@ -69,11 +69,12 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          for attempt in 1 2 3 4 5; do
+          # npm can take a few minutes to list a new version (1.2.0 took two).
+          for attempt in $(seq 1 20); do
             published="$(npm view "@echoessh/sdk@${VERSION}" version 2>/dev/null || true)"
             [ "$published" = "$VERSION" ] && { echo "@echoessh/sdk@${VERSION} is live."; exit 0; }
-            echo "Not visible yet (attempt ${attempt}/5); waiting."
-            sleep 10
+            echo "Not visible yet (attempt ${attempt}/20); waiting."
+            sleep 15
           done
           echo "::error::@echoessh/sdk@${VERSION} is not on the registry after publishing"
           exit 1
