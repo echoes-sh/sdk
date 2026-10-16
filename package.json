@@ -1,6 +1,6 @@
 {
   "name": "@echoessh/sdk",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Official SDK for Echoes - Centralized feedback platform for developers",
   "author": "Echoes",
   "license": "MIT",
@@ -79,7 +79,8 @@
     }
   },
   "dependencies": {
-    "rrweb": "^2.0.0-alpha.17"
+    "@rrweb/record": "^2.1.7",
+    "@rrweb/types": "^2.1.7"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",

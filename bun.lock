@@ -5,7 +5,8 @@
     "": {
       "name": "@echoessh/sdk",
       "dependencies": {
-        "rrweb": "^2.0.0-alpha.17",
+        "@rrweb/record": "^2.1.7",
+        "@rrweb/types": "^2.1.7",
       },
       "devDependencies": {
         "@testing-library/dom": "^10.4.2",
@@ -158,6 +159,8 @@
     "@rollup/rollup-win32-x64-gnu": ["@rollup/rollup-win32-x64-gnu@4.64.7", "", { "os": "win32", "cpu": "x64" }, "sha512-u9bp2yXCI3/BUjUxY6uWknAY32pfvvDCPysyUTySotx0dj3ydlFHrRQYfn/b/kZgnfjyEwySMtI7Ga054uiysQ=="],
 
     "@rollup/rollup-win32-x64-msvc": ["@rollup/rollup-win32-x64-msvc@4.64.7", "", { "os": "win32", "cpu": "x64" }, "sha512-EhX6N3XPMEnVU5cRfNgzPOKcSucsbu3nNNWuoAaEuKIqmddBKHN5b9d4rPe65T1I+FaOT176JKiZNsUBp3rqbA=="],
+
+    "@rrweb/record": ["@rrweb/record@2.1.7", "", { "dependencies": { "@rrweb/types": "^2.1.7", "@rrweb/utils": "^2.1.7", "rrweb": "^2.1.7" } }, "sha512-lIAbWdH8JwRuujURxTBtgrlsPvyBUGXUa9aB5hK8s5DdHgagyLFkIaAWhtthuOwT3o4o4+w38yUVPLc3W2oOrw=="],
 
     "@rrweb/types": ["@rrweb/types@2.1.7", "", {}, "sha512-fNua4du3xvMlC5iK8lYU1CEg+9wsA7FXUzahVBBVGBKqVPSifROLVh3mfV90hhsfAcs4jAvLbl23v28hXrxZWg=="],
 
