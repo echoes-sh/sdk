@@ -11,7 +11,7 @@
   "unpkg": "./dist/experiments.min.js",
   "jsdelivr": "./dist/experiments.min.js",
   "bin": {
-    "echoes": "./dist/cli.cjs"
+    "echoes": "dist/cli.cjs"
   },
   "exports": {
     ".": {
