@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Session recording now depends on `@rrweb/record` and `@rrweb/types` (2.1.7) instead of the deprecated `rrweb` package (2.0.0-alpha.17). Recording options and output are unchanged.
+
 ## 1.2.0
 
 Ratings and server-side experiments, following the Echoes contract for ratings and experiments (echoes-v2 `docs/ratings-and-experiments.md`). Apps on 1.0.x keep working unchanged.

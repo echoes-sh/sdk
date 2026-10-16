@@ -1,9 +1,13 @@
-import type { eventWithTime, recordOptions } from "rrweb";
+import type { record as rrwebRecord } from "@rrweb/record";
+import type { eventWithTime } from "@rrweb/types";
 import type { SessionManager } from "./session-manager";
 import { compressToBase64, estimateStringSize } from "./compression";
 
 // Type for the stop function returned by rrweb's record()
 type StopRecordingFn = (() => void) | undefined;
+
+// @rrweb/record doesn't re-export recordOptions, so derive it from record()
+type RecordOptions = NonNullable<Parameters<typeof rrwebRecord<eventWithTime>>[0]>;
 
 // ============================================================================
 // TYPES
@@ -112,7 +116,7 @@ export class RecordingManager {
 
     try {
       // Dynamically import rrweb to support tree-shaking
-      const { record } = await import("rrweb");
+      const { record } = await import("@rrweb/record");
 
       this.isRecording = true;
       this.recordingStartTime = Date.now();
@@ -121,7 +125,7 @@ export class RecordingManager {
       this.chunkIndex = 0;
 
       // Build rrweb config
-      const rrwebConfig: recordOptions<eventWithTime> = {
+      const rrwebConfig: RecordOptions = {
         emit: (event: eventWithTime) => {
           this.handleEvent(event);
         },
