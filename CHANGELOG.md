@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.2.2
+
+Security update. The fixed advisories are all in build and test tooling, which is not shipped in the package; the published code is unchanged.
+
+### Security
+
+- Vitest 3.2.7 → 4.1.12. Fixes GHSA-82fw-gwwq-j7x9 and GHSA-qxg6-89mg-rqv8 in `@vitest/mocker` (moderate), and removes `tinypool`, which carried GHSA-5gmw-xhrv-c9v3 and GHSA-85c8-ppgw-ccpr (critical).
+- tsup 8.5.1 → 9.0.0, which moves esbuild from 0.27 to 0.28.2. Fixes GHSA-g7r4-m6w7-qqqr (low). `bun audit` now reports no vulnerabilities.
+
+### Changed
+
+- `@rrweb/record` and `@rrweb/types` 2.1.7 → 2.2.0.
+- The type declarations now list type-only exports in a separate `export type { … }`. The exported names are the same.
+- The CDN bundle reports `version` `1.2.2`.
+
 ## 1.2.1
 
 ### Changed

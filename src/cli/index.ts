@@ -11,7 +11,7 @@ async function main() {
       break;
     case "--version":
     case "-v":
-      console.log("@echoessh/sdk v1.2.1");
+      console.log("@echoessh/sdk v1.2.2");
       break;
     case "--help":
     case "-h":
