@@ -88,7 +88,7 @@
     "@types/node": "^22.20.7",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "jsdom": "^26.1.0",
+    "jsdom": "^31.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tsup": "^9.0.0",
